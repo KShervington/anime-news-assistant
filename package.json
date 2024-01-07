@@ -1,0 +1,19 @@
+{
+  "name": "anime-news-assistant",
+  "version": "1.0.0",
+  "description": "An AI assistant that provides up=to-date news about the anime industry.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KShervington/anime-news-assistant.git\u001b[H\u001b[F.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KShervington/anime-news-assistant.git\u001b[H\u001b[F/issues"
+  },
+  "homepage": "https://github.com/KShervington/anime-news-assistant.git\u001b[H\u001b[F#readme"
+}
