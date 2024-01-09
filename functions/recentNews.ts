@@ -34,22 +34,21 @@ function ChooseTitles(source: string) {
 
 }
 
-const getLatestNews = (sourceId: string, numArticles: number) => {
+const getLatestNews = async (sourceId: string, numArticles: number) => {
 
     const sourceAddress = newsSources.filter(source => source.name == sourceId)[0].address;
     const sourceBase = newsSources.filter(source => source.name == sourceId)[0].base;
 
+    let singleArticles: Array<Object> = [];
+
     try {
-        axios.get(sourceAddress)
+        await axios.get(sourceAddress)
             .then(response => {
                 const html = response.data;
                 const $ = cheerio.load(html);
-                const singleArticles: Array<Object> = [];
                 var articleTitleHTML: string, title: string, url: string | undefined;
 
-                // console.log("HTML is:\n" + html);
-
-                articleTitleHTML = ChooseTitles('ann');
+                articleTitleHTML = ChooseTitles(sourceId);
 
                 // for (let i = 0; i < numArticles; i++) {
                 //     let currArticle = $(articleTitleHTML).next();
@@ -75,15 +74,14 @@ const getLatestNews = (sourceId: string, numArticles: number) => {
                     })
                 });
 
-                console.log(singleArticles);
-
-                return singleArticles;
             })
     }
     catch (err) {
         console.error(err);
+    }
+    finally {
 
-        return null;
+        return singleArticles;
     }
 }
 
@@ -93,12 +91,11 @@ interface ConsolidateNewsParams {
 }
 
 // This function will organize full articles for Chat GPT to summarize
-const consolidateNews = (params: ConsolidateNewsParams) => {
+const consolidateNews = async (params: ConsolidateNewsParams) => {
 
-    const topNews: Array<Object> | null | undefined = getLatestNews(params.source, params.numArticles);
+    const topNews: Array<Object> = await getLatestNews(params.source, params.numArticles);
 
-    // Logging 'undefined'
-    console.log(JSON.stringify(topNews));
+    console.log(topNews === null ? "singleArticles is empty" : JSON.stringify(topNews, null, 4));
 
     return 1;
 };

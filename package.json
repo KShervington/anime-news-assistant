@@ -4,6 +4,7 @@
   "description": "An AI assistant that provides up=to-date news about the anime industry.",
   "main": "index.js",
   "scripts": {
+    "start": "react start",
     "test": "echo \"Error: no test specified\" && exit 1",
     "recentNews": "ts-node functions/recentNews.ts"
   },
