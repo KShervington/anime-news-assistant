@@ -81,7 +81,7 @@ const getLatestNews = async (sourceId: string, numArticles: number) => {
     }
     finally {
 
-        return singleArticles;
+        return singleArticles.slice(0, numArticles);
     }
 }
 
@@ -95,9 +95,7 @@ export const consolidateNews = async (params: ConsolidateNewsParams) => {
 
     const topNews: Array<Object> = await getLatestNews(params.source, params.numArticles);
 
-    for (var i: number = 0; i < params.numArticles; i++) {
-        console.log(JSON.stringify(topNews[i], null, 4));
-    }
+    console.log(JSON.stringify(topNews, null, 4));
 
     return (topNews !== null ? true : false);
 };

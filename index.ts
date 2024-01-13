@@ -23,7 +23,7 @@ async function main() {
     const newsAvailable: boolean = await consolidateNews(
         {
             source: 'ann',
-            numArticles: 2
+            numArticles: 5
         }
     );
 
