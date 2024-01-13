@@ -91,18 +91,13 @@ interface ConsolidateNewsParams {
 }
 
 // This function will organize full articles for Chat GPT to summarize
-const consolidateNews = async (params: ConsolidateNewsParams) => {
+export const consolidateNews = async (params: ConsolidateNewsParams) => {
 
     const topNews: Array<Object> = await getLatestNews(params.source, params.numArticles);
 
-    console.log(topNews === null ? "singleArticles is empty" : JSON.stringify(topNews, null, 4));
-
-    return 1;
-};
-
-consolidateNews(
-    {
-        source: 'ann',
-        numArticles: 3
+    for (var i: number = 0; i < params.numArticles; i++) {
+        console.log(JSON.stringify(topNews[i], null, 4));
     }
-);
+
+    return (topNews !== null ? true : false);
+};
