@@ -95,7 +95,5 @@ export const consolidateNews = async (params: ConsolidateNewsParams) => {
 
     const topNews: Array<Object> = await getLatestNews(params.source, params.numArticles);
 
-    console.log(JSON.stringify(topNews, null, 4));
-
-    return (topNews !== null ? true : false);
+    return topNews;
 };

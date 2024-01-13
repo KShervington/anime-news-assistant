@@ -20,15 +20,14 @@ async function main() {
     //     process.stdout.write(chunk.choices[0]?.delta?.content || "");
     // }
 
-    const newsAvailable: boolean = await consolidateNews(
+    const recentNews: Array<Object> = await consolidateNews(
         {
             source: 'ann',
-            numArticles: 5
+            numArticles: 4
         }
     );
 
-    if (newsAvailable) console.log("Getting news from recentNews.ts");
-    else console.log("Failed to get news from recentNews.ts");
+    console.log(JSON.stringify(recentNews, null, 4));
 }
 
 main();
