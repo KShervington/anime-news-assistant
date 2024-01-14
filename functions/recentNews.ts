@@ -1,6 +1,7 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
+// Currently 'ann' is the only source being used
 const newsSources = [
     {
         name: 'mal',
@@ -14,8 +15,7 @@ const newsSources = [
     }
 ]
 
-const articles: Array<Object> = [];
-
+// returns the css selector used for article titles on the respective websites
 function ChooseTitles(source: string) {
 
     switch (source) {
@@ -34,45 +34,64 @@ function ChooseTitles(source: string) {
 
 }
 
+// Fetches the body content of the article based on its url
+async function getArticleContent(url: string) {
+
+    let bodyContent: string = "";
+
+    await axios.get(url)
+        .then(response => {
+            const html: string = response.data;
+            const $: cheerio.CheerioAPI = cheerio.load(html);
+
+            $(".meat > p", html).each(function () {
+                bodyContent += $(this).text();
+            })
+
+        })
+
+    return bodyContent;
+}
+
 const getLatestNews = async (sourceId: string, numArticles: number) => {
 
+    // Filter newsSources object to get URL for news and base URL for alternate use
     const sourceAddress = newsSources.filter(source => source.name == sourceId)[0].address;
     const sourceBase = newsSources.filter(source => source.name == sourceId)[0].base;
 
-    let singleArticles: Array<Object> = [];
+    let articles: Array<Object> = [];
 
     try {
         await axios.get(sourceAddress)
-            .then(response => {
-                const html = response.data;
-                const $ = cheerio.load(html);
-                var articleTitleHTML: string, title: string, url: string | undefined;
+            .then(async response => {
+                const html: string = response.data;
+                const $: cheerio.CheerioAPI = cheerio.load(html);
+                var articleTitleSelector: string;
 
-                articleTitleHTML = ChooseTitles(sourceId);
+                // Get CSS selector for selecting <a> tag used for article title
+                articleTitleSelector = ChooseTitles(sourceId);
 
-                // for (let i = 0; i < numArticles; i++) {
-                //     let currArticle = $(articleTitleHTML).next();
+                // Populate obj array w/ data on each article
+                for (let i = 0; i < numArticles; i++) {
 
-                //     title = currArticle.text();
-                //     url = currArticle.attr('href');
+                    // '.eq()' is used to select specific index | https://cheerio.js.org/docs/basics/traversing#eq
+                    const title: string = $(articleTitleSelector, html).eq(i).text();
+                    const endpoint: string | undefined = $(articleTitleSelector, html).eq(i).attr('href');
 
-                //     singleArticles.push({
-                //         title,
-                //         url: sourceBase + url,
-                //         source: sourceId
-                //     })
-                // }
+                    const content: string = (
+                        endpoint === undefined ?
+                            "[article endpoint undefined]"
+                            :
+                            await getArticleContent(sourceBase + endpoint)
+                    );
 
-                $(articleTitleHTML, html).each(function () {
-                    const title = $(this).text();
-                    const url = $(this).attr('href');
-
-                    singleArticles.push({
+                    articles.push({
                         title,
-                        url: sourceBase + url,
-                        source: sourceId
+                        url: sourceBase + endpoint,
+                        source: sourceId,
+                        body: content
                     })
-                });
+                }
 
             })
     }
@@ -80,8 +99,7 @@ const getLatestNews = async (sourceId: string, numArticles: number) => {
         console.error(err);
     }
     finally {
-
-        return singleArticles;
+        return articles;
     }
 }
 
@@ -93,11 +111,7 @@ interface ConsolidateNewsParams {
 // This function will organize full articles for Chat GPT to summarize
 export const consolidateNews = async (params: ConsolidateNewsParams) => {
 
-    const topNews: Array<Object> = await getLatestNews(params.source, params.numArticles);
+    const recentNews: Array<Object> = await getLatestNews(params.source, params.numArticles);
 
-    for (var i: number = 0; i < params.numArticles; i++) {
-        console.log(JSON.stringify(topNews[i], null, 4));
-    }
-
-    return (topNews !== null ? true : false);
+    return recentNews;
 };
