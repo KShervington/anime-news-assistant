@@ -23,7 +23,7 @@ async function main() {
     const recentNews: Array<Object> = await consolidateNews(
         {
             source: 'ann',
-            numArticles: 4
+            numArticles: 2
         }
     );
 

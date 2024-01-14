@@ -1,6 +1,7 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
+// Currently 'ann' is the only source being used
 const newsSources = [
     {
         name: 'mal',
@@ -13,8 +14,6 @@ const newsSources = [
         base: 'https://www.animenewsnetwork.com/'
     }
 ]
-
-const articles: Array<Object> = [];
 
 // returns the css selector used for article titles on the respective websites
 function ChooseTitles(source: string) {
@@ -35,14 +34,15 @@ function ChooseTitles(source: string) {
 
 }
 
+// Fetches the body content of the article based on its url
 async function getArticleContent(url: string) {
 
     let bodyContent: string = "";
 
     await axios.get(url)
         .then(response => {
-            const html = response.data;
-            const $ = cheerio.load(html);
+            const html: string = response.data;
+            const $: cheerio.CheerioAPI = cheerio.load(html);
 
             $(".meat > p", html).each(function () {
                 bodyContent += $(this).text();
@@ -55,30 +55,37 @@ async function getArticleContent(url: string) {
 
 const getLatestNews = async (sourceId: string, numArticles: number) => {
 
+    // Filter newsSources object to get URL for news and base URL for alternate use
     const sourceAddress = newsSources.filter(source => source.name == sourceId)[0].address;
     const sourceBase = newsSources.filter(source => source.name == sourceId)[0].base;
 
-    let singleArticles: Array<Object> = [];
+    let articles: Array<Object> = [];
 
     try {
         await axios.get(sourceAddress)
             .then(async response => {
-                const html = response.data;
-                const $ = cheerio.load(html);
+                const html: string = response.data;
+                const $: cheerio.CheerioAPI = cheerio.load(html);
                 var articleTitleSelector: string;
 
+                // Get CSS selector for selecting <a> tag used for article title
                 articleTitleSelector = ChooseTitles(sourceId);
 
-                // NEW new way to push to article object
+                // Populate obj array w/ data on each article
                 for (let i = 0; i < numArticles; i++) {
 
                     // '.eq()' is used to select specific index | https://cheerio.js.org/docs/basics/traversing#eq
-                    const title = $(articleTitleSelector, html).eq(i).text();
-                    const endpoint = $(articleTitleSelector, html).eq(i).attr('href');
+                    const title: string = $(articleTitleSelector, html).eq(i).text();
+                    const endpoint: string | undefined = $(articleTitleSelector, html).eq(i).attr('href');
 
-                    const content: string = await getArticleContent(sourceBase + endpoint);
+                    const content: string = (
+                        endpoint === undefined ?
+                            "[article endpoint undefined]"
+                            :
+                            await getArticleContent(sourceBase + endpoint)
+                    );
 
-                    singleArticles.push({
+                    articles.push({
                         title,
                         url: sourceBase + endpoint,
                         source: sourceId,
@@ -86,45 +93,13 @@ const getLatestNews = async (sourceId: string, numArticles: number) => {
                     })
                 }
 
-                // NEW way to push to article object
-                // for (const article of $(articleTitleSelector, html)) {
-                //     const title = $(article).text();
-                //     const endpoint = $(article).attr('href');
-
-                //     const content: string = await getArticleContent(sourceBase + endpoint);
-
-                //     singleArticles.push({
-                //         title,
-                //         url: sourceBase + endpoint,
-                //         source: sourceId,
-                //         body: content
-                //     })
-                // }
-
-                // OLD way to push to article object
-                // $(articleTitleSelector, html).each(function () {
-                //     const title = $(this).text();
-                //     const endpoint = $(this).attr('href');
-
-                //     // TODO: need to figure out how to populate this var
-                //     const content: string = await getArticleContent(sourceBase + endpoint);
-
-                //     singleArticles.push({
-                //         title,
-                //         url: sourceBase + endpoint,
-                //         source: sourceId,
-                //         body: content
-                //     })
-                // });
-
             })
     }
     catch (err) {
         console.error(err);
     }
     finally {
-
-        return singleArticles;
+        return articles;
     }
 }
 
@@ -140,9 +115,3 @@ export const consolidateNews = async (params: ConsolidateNewsParams) => {
 
     return recentNews;
 };
-
-const main = async () => {
-    const body: string = await getArticleContent("https://www.animenewsnetwork.com//news/2024-01-13/sanrio-wanpaku-touken-ranbu-project-has-anime-in-the-works/.206437");
-
-    console.log(body === undefined ? "\'body\' is undefined" : body);
-}
