@@ -10,24 +10,28 @@ const openai = new OpenAI({
 });
 
 async function main() {
-    // AI stuff
-    // const stream = await openai.chat.completions.create({
-    //     model: "gpt-3.5-turbo",
-    //     messages: [{ role: "user", content: "Say this is a test" }],
-    //     stream: true,
-    // });
-    // for await (const chunk of stream) {
-    //     process.stdout.write(chunk.choices[0]?.delta?.content || "");
-    // }
 
-    const recentNews: Array<Object> = await consolidateNews(
+    const recentNews: string = await consolidateNews(
         {
             source: 'ann',
-            numArticles: 2
+            numArticles: 3
         }
     );
 
-    console.log(JSON.stringify(recentNews, null, 4));
+    // AI stuff
+    const stream = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+            {
+                role: "user",
+                content: "Summarize the following news articles. Each summary should be 2 to 3 sentences and separated into its own paragraph:\n" + recentNews
+            }
+        ],
+        stream: true,
+    });
+    for await (const chunk of stream) {
+        process.stdout.write(chunk.choices[0]?.delta?.content || "");
+    }
 }
 
 main();

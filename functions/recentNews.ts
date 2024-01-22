@@ -1,6 +1,18 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
+interface NewsObject {
+    title: string,
+    url: string,
+    source: string,
+    body: string
+}
+
+interface ConsolidateNewsParams {
+    source: string;
+    numArticles: number;
+}
+
 // Currently 'ann' is the only source being used
 const newsSources = [
     {
@@ -44,6 +56,7 @@ async function getArticleContent(url: string) {
             const html: string = response.data;
             const $: cheerio.CheerioAPI = cheerio.load(html);
 
+            // Get each paragraph in the respective article
             $(".meat > p", html).each(function () {
                 bodyContent += $(this).text();
             })
@@ -59,7 +72,7 @@ const getLatestNews = async (sourceId: string, numArticles: number) => {
     const sourceAddress = newsSources.filter(source => source.name == sourceId)[0].address;
     const sourceBase = newsSources.filter(source => source.name == sourceId)[0].base;
 
-    let articles: Array<Object> = [];
+    let articles: Array<NewsObject> = [];
 
     try {
         await axios.get(sourceAddress)
@@ -71,8 +84,12 @@ const getLatestNews = async (sourceId: string, numArticles: number) => {
                 // Get CSS selector for selecting <a> tag used for article title
                 articleTitleSelector = ChooseTitles(sourceId);
 
+                console.log("fetching...");
+
                 // Populate obj array w/ data on each article
                 for (let i = 0; i < numArticles; i++) {
+
+                    console.log('.');
 
                     // '.eq()' is used to select specific index | https://cheerio.js.org/docs/basics/traversing#eq
                     const title: string = $(articleTitleSelector, html).eq(i).text();
@@ -84,6 +101,12 @@ const getLatestNews = async (sourceId: string, numArticles: number) => {
                             :
                             await getArticleContent(sourceBase + endpoint)
                     );
+
+                    // If article content is insufficient, use the next article
+                    if (content.length <= 100) {
+                        numArticles++;
+                        continue;
+                    }
 
                     articles.push({
                         title,
@@ -103,15 +126,19 @@ const getLatestNews = async (sourceId: string, numArticles: number) => {
     }
 }
 
-interface ConsolidateNewsParams {
-    source: string;
-    numArticles: number;
-}
-
 // This function will organize full articles for Chat GPT to summarize
 export const consolidateNews = async (params: ConsolidateNewsParams) => {
 
-    const recentNews: Array<Object> = await getLatestNews(params.source, params.numArticles);
+    const recentNews: Array<NewsObject> = await getLatestNews(params.source, params.numArticles);
+    const consolidatedNews: string = (function (newsArray: Array<NewsObject>) {
+        let totalNews: string = "";
 
-    return recentNews;
+        newsArray.forEach((newsItem: NewsObject) => {
+            totalNews += newsItem.body + "\n---\n";
+        });
+
+        return totalNews;
+    })(recentNews);
+
+    return consolidatedNews;
 };
